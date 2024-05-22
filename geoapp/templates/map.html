@@ -14,39 +14,53 @@
   <link rel="stylesheet" href="{% static 'css/styles.min.css' %}" />
   <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.locatecontrol/dist/L.Control.Locate.min.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-fullscreen/dist/leaflet.fullscreen.css" />
 
-<style>
-  body{
-    height: 100%;
-  }
-  #search-container {
-    position: absolute;
-    top: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 1000;
-    background: white;
-    padding: 10px;
-    border-radius: 5px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
+    <style>
+      body, html {
+          margin: 0;
+          padding: 0;
+          height: 100%;
+      }
 
-#search-input {
-    width: 200px;
-    padding: 5px;
-}
+      #search-container {
+          position: absolute;
+          top: 10px;
+          left: 50%;
+          transform: translateX(-50%);
+          z-index: 1000;
+          background: white;
+          padding: 10px;
+          border-radius: 5px;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
 
-#search-button {
-    padding: 5px 10px;
-}
+      #search-input {
+          width: 200px;
+          padding: 5px;
+      }
 
-#map {
-    width: 100%;
-    height: 100%;
-}
-</style>
+      #search-button {
+          padding: 5px 10px;
+      }
+
+      #map {
+          width: 100%;
+          height: 100%;
+      }
+
+      .locate-button {
+          background: white;
+          border: none;
+          padding: 10px;
+          cursor: pointer;
+          border-radius: 5px;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+  </style>
 </head>
 <body>
    
@@ -185,7 +199,7 @@
 
         <style>
           #map {
-              height: 600px;
+              height: 40rem;
               width: 100%;
           }
           #search-box {
@@ -193,11 +207,12 @@
           }
       </style>
         
-        <div id="search-container">
-          <input type="text" id="search-input" placeholder="Search for a location...">
-          <button class="btn btn-secondary" id="search-button">Search</button>
-      </div>
-      <div id="map"></div>
+       
+      <div id="search-container">
+        <input type="text" id="search-input" placeholder="Search for a location...">
+        <button class="btn btn-secondary" id="search-button">Search</button>
+    </div>
+    <div id="map"></div>
       <div class="py-6 px-6 text-center">
         <p class="mb-0 fs-4">Design and Developed by Group 1</p>
       </div>
@@ -234,75 +249,143 @@
     
         });
     </script>
-    <script>
+   
+   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+   <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+   <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+   <script src="https://unpkg.com/leaflet.locatecontrol/dist/L.Control.Locate.min.js"></script>
+   <script src="https://unpkg.com/leaflet-fullscreen/dist/Leaflet.fullscreen.min.js"></script>
+   <script>
        document.addEventListener('DOMContentLoaded', function () {
-    // Initialize the map
-    var map = L.map('map').setView([2.7724, 32.2881], 15); // Gulu University coordinates
+           // Initialize the map with Gulu University coordinates
+           var map = L.map('map').setView([2.7724, 32.2881], 15); // Gulu University coordinates
 
-    // Add OpenStreetMap tile layer
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-    }).addTo(map);
+           // Add OpenStreetMap tile layer
+           L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+               maxZoom: 19,
+           }).addTo(map);
 
-    // Add geocoder control
-    var geocoder = L.Control.geocoder({
-        defaultMarkGeocode: false
-    }).addTo(map);
+           // Add zoom controls
+           L.control.zoom({
+               position: 'topright'
+           }).addTo(map);
 
-    // Handle geocoding results
-    geocoder.on('markgeocode', function(e) {
-        var bbox = e.geocode.bbox;
-        var poly = L.polygon([
-            bbox.getSouthEast(),
-            bbox.getNorthEast(),
-            bbox.getNorthWest(),
-            bbox.getSouthWest()
-        ]).addTo(map);
-        map.fitBounds(poly.getBounds());
-    });
+           // Add scale control
+           L.control.scale().addTo(map);
 
-    // Initialize routing control without the default card
-    var control = L.Routing.control({
-        waypoints: [],
-        routeWhileDragging: true,
-        geocoder: L.Control.Geocoder.nominatim(),
-        createMarker: function() { return null; }, // Hide markers
-        show: false // Hide the routing panel
-    }).addTo(map);
+           // Add locate control to find user's location
+           L.control.locate({
+               position: 'topright',
+               strings: {
+                   title: "Show me where I am"
+               }
+           }).addTo(map);
 
-    // Variable to store the marker
-    var searchMarker;
+           // Add full-screen control
+           L.control.fullscreen({
+               position: 'topright',
+               title: 'View Fullscreen'
+           }).addTo(map);
 
-    // Search button click event
-    document.getElementById('search-button').addEventListener('click', function () {
-        var searchInput = document.getElementById('search-input').value;
+           // Add geocoder control
+           var geocoder = L.Control.geocoder({
+               defaultMarkGeocode: false
+           }).addTo(map);
 
-        // Perform geocoding
-        geocoder.options.geocoder.geocode(searchInput, function(results) {
-            if (results && results.length > 0) {
-                var result = results[0];
-                map.setView(result.center, 17);
+           // Handle geocoding results
+           geocoder.on('markgeocode', function(e) {
+               var bbox = e.geocode.bbox;
+               var poly = L.polygon([
+                   bbox.getSouthEast(),
+                   bbox.getNorthEast(),
+                   bbox.getNorthWest(),
+                   bbox.getSouthWest()
+               ]).addTo(map);
+               map.fitBounds(poly.getBounds());
+           });
 
-                // Remove the existing marker if it exists
-                if (searchMarker) {
-                    map.removeLayer(searchMarker);
-                }
+           // Initialize routing control without the default card
+           var control = L.Routing.control({
+               waypoints: [],
+               routeWhileDragging: true,
+               geocoder: L.Control.Geocoder.nominatim(),
+               createMarker: function() { return null; }, // Hide markers
+               show: false, // Hide the routing panel
+               lineOptions: {
+                   styles: [{color: 'blue', opacity: 0.5, weight: 5}]
+               }
+           }).addTo(map);
 
-                // Add a new marker at the search result location
-                searchMarker = L.marker(result.center).addTo(map);
+           // Variable to store the marker
+           var searchMarker;
+           var currentLocation;
 
-                // Set routing waypoint
-                control.setWaypoints([L.latLng(result.center.lat, result.center.lng)]);
-            } else {
-                alert("Location not found!");
-            }
-        });
-    });
-});
-    </script>
-     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-     <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
-     <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+           // Search button click event
+           document.getElementById('search-button').addEventListener('click', function () {
+               var searchInput = document.getElementById('search-input').value;
+
+               // Perform geocoding
+               geocoder.options.geocoder.geocode(searchInput, function(results) {
+                   if (results && results.length > 0) {
+                       var result = results[0];
+                       map.setView(result.center, 17);
+
+                       // Remove the existing marker if it exists
+                       if (searchMarker) {
+                           map.removeLayer(searchMarker);
+                       }
+
+                       // Add a new marker at the search result location
+                       searchMarker = L.marker(result.center).addTo(map)
+                           .bindPopup(result.name).openPopup(); // Add popup with location name
+
+                       // Set routing waypoint from current location to searched location
+                       if (currentLocation) {
+                           control.setWaypoints([
+                               L.latLng(currentLocation.lat, currentLocation.lng),
+                               L.latLng(result.center.lat, result.center.lng)
+                           ]);
+                       } else {
+                           alert("Please allow location access to get directions from your location.");
+                       }
+                   } else {
+                       alert("Location not found!");
+                   }
+               });
+           });
+
+           // Button to center the map to the user's location
+           var locateButton = L.control({ position: 'topright' });
+           locateButton.onAdd = function() {
+               var button = L.DomUtil.create('button', 'locate-button');
+               button.innerHTML = 'Locate Me';
+               L.DomEvent.on(button, 'click', function() {
+                   map.locate({ setView: true, maxZoom: 16 });
+               });
+               return button;
+           };
+           locateButton.addTo(map);
+
+           // Event when location is found
+           map.on('locationfound', function(e) {
+               currentLocation = e.latlng;
+               if (searchMarker) {
+                   control.setWaypoints([
+                       L.latLng(currentLocation.lat, currentLocation.lng),
+                       L.latLng(searchMarker.getLatLng().lat, searchMarker.getLatLng().lng)
+                   ]);
+               }
+               L.marker(e.latlng).addTo(map)
+                   .bindPopup("You are here!").openPopup();
+           });
+
+           // Event when location is not found
+           map.on('locationerror', function() {
+               alert("Location not found.");
+           });
+       });
+   </script>
+
     <script type="text/javascript" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
     <script src="{% static 'libs/jquery/dist/jquery.min.js' %}"></script>
   <!-- <script src="{% static 'libs/bootstrap/dist/js/bootstrap.bundle.min.js' %}"></script> -->
