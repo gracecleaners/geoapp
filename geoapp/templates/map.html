@@ -13,6 +13,8 @@
 <link rel="shortcut icon" type="image/png" href="{% static 'images/logos/favicon.png' %}" />
   <link rel="stylesheet" href="{% static 'css/styles.min.css' %}" />
   <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
 
 </head>
 <body>
@@ -136,19 +138,35 @@
           <div class="card w-100">
             <div class="card-body">
               <div class="d-sm-flex d-block align-items-center justify-content-between mb-9">
-                <div class="mb-3 mb-sm-0">
-                  <h5 class="card-title fw-semibold">Map</h5>
+                <div class="mb-1 mb-sm-0">
+                  <h5 class="card-title fw-semibold">Campus Map</h5>
                 </div>
                 <div>
                 </div>
               </div>
-              <div id="chart"></div>
+             
             </div>
           </div>
         </div>
        
       </div>
      
+
+        <style>
+          #map {
+              height: 600px;
+              width: 100%;
+          }
+          #search-box {
+              margin-bottom: 10px;
+          }
+      </style>
+        
+          <div id="search-box">
+              <input class="form-control" type="text" id="search-input" placeholder="Search for a location..."><br>
+              <button class="btn btn-secondary" onclick="searchLocations()">Search</button>
+          </div>
+          <div id="map"></div>
       <div class="py-6 px-6 text-center">
         <p class="mb-0 fs-4">Design and Developed by Group 1</p>
       </div>
@@ -185,6 +203,79 @@
     
         });
     </script>
+     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+     <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+     <script>
+         var map = L.map('map').setView([2.7724, 32.2881], 15);  // Centered on Gulu University
+ 
+         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+         }).addTo(map);
+ 
+         // Real-time location tracking
+         map.locate({setView: true, maxZoom: 16});
+ 
+         function onLocationFound(e) {
+             var radius = e.accuracy / 2;
+ 
+             L.marker(e.latlng).addTo(map)
+                 .bindPopup("You are within " + radius + " meters from this point").openPopup();
+ 
+             L.circle(e.latlng, radius).addTo(map);
+         }
+ 
+         map.on('locationfound', onLocationFound);
+ 
+         function onLocationError(e) {
+             alert(e.message);
+         }
+ 
+         map.on('locationerror', onLocationError);
+ 
+         // Routing functionality
+         L.Routing.control({
+             waypoints: [
+                 L.latLng(2.7724, 32.2881),  // Example coordinates
+                 L.latLng(2.7740, 32.2900)
+             ],
+             routeWhileDragging: true
+         }).addTo(map);
+ 
+         // Fetch and display locations from the API
+         function fetchLocations() {
+             fetch('/api/locations/')
+                 .then(response => response.json())
+                 .then(data => {
+                     data.forEach(location => {
+                         L.marker([location.latitude, location.longitude]).addTo(map)
+                             .bindPopup(`<b>${location.name}</b><br>${location.description}`);
+                     });
+                 });
+         }
+ 
+         fetchLocations();
+ 
+         // Search functionality
+         function searchLocations() {
+             var query = document.getElementById('search-input').value;
+             fetch(`/api/search/?q=${query}`)
+                 .then(response => response.json())
+                 .then(data => {
+                     // Clear existing markers
+                     map.eachLayer(function (layer) {
+                         if (layer instanceof L.Marker && !layer._icon.classList.contains('leaflet-routing-icon')) {
+                             map.removeLayer(layer);
+                         }
+                     });
+ 
+                     // Add new markers
+                     data.forEach(location => {
+                         L.marker([location.latitude, location.longitude]).addTo(map)
+                             .bindPopup(`<b>${location.name}</b><br>${location.description}`);
+                     });
+                 });
+         }
+     </script>
     <script type="text/javascript" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
     <script src="{% static 'libs/jquery/dist/jquery.min.js' %}"></script>
   <!-- <script src="{% static 'libs/bootstrap/dist/js/bootstrap.bundle.min.js' %}"></script> -->
